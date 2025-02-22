@@ -2,11 +2,12 @@
 #define BUTTON_UP_PIN 6
 #define BUTTON_SELECT_PIN 5
 #define BUTTON_DOWN_PIN 4
+#define BUZZER_PIN 14
 
 //Define session times - change to alter pomodoro session time
-const int workTime = 25 * 60;   // 15 seconds work session
-const int shortBreak = 5 * 60;  // 15 seconds short break
-const int longBreak = 20 * 60;  // 30 seconds long break
+const int workTime = 25 * 60;   
+const int shortBreak = 5 * 60;  
+const int longBreak = 15 * 60;  
 
 // Define session names - change to alter pomodoro session names
 const char* workSessionName = "Work Session";
@@ -16,6 +17,7 @@ const char* longBreakName = "Long Break";
 
 
 #include "U8glib.h"
+#include "pitches.h"
 
 U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_DEV_0 | U8G_I2C_OPT_NO_ACK | U8G_I2C_OPT_FAST);  // Fast I2C / TWI
 
@@ -182,6 +184,11 @@ bool isWorkSession = true;     // Starts with a work session
 int remainingTime = workTime;  // Start with work session time
 int previousTime = 0;
 
+//Buzzer variables
+int melody[] = {
+  NOTE_C5, NOTE_D5, NOTE_E5, NOTE_F5, NOTE_G5, NOTE_A5, NOTE_B5, NOTE_C6
+};
+
 
 void draw() {
   int minutes = remainingTime / 60;
@@ -217,8 +224,8 @@ void loop() {
     // up and down buttons only work for the menu screen
     if ((digitalRead(BUTTON_UP_PIN) == LOW) && (button_up_clicked == 0)) {  // up button clicked - jump to previous menu item
       item_selected = item_selected - 1;                                    // select previous item
-      button_up_clicked = 1;    // set button to clicked to only perform the action once
-      if (item_selected < 0) {  // if first item was selected, jump to last item
+      button_up_clicked = 1;                                                // set button to clicked to only perform the action once
+      if (item_selected < 0) {                                              // if first item was selected, jump to last item
         item_selected = NUM_ITEMS - 1;
       }
     } else if ((digitalRead(BUTTON_DOWN_PIN) == LOW) && (button_down_clicked == 0)) {  // down button clicked - jump to next menu item
@@ -302,6 +309,14 @@ void loop() {
         } else {
           remainingTime = workTime;  // After a break, always return to work
         }
+        //buzzer after every single session
+        tone(BUZZER_PIN, melody[0], 500);
+        delay(600);
+        tone(BUZZER_PIN, melody[1], 500);
+        delay(600);
+        tone(BUZZER_PIN, melody[2], 500);
+        delay(600);
+        tone(BUZZER_PIN, melody[3], 500);
 
         isWorkSession = !isWorkSession;  // Toggle session type
       }
