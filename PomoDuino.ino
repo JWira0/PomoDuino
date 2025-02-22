@@ -182,7 +182,7 @@ void setup() {
 int workSessionCount = 0;      // Counts how many work sessions have passed
 bool isWorkSession = true;     // Starts with a work session
 int remainingTime = workTime;  // Start with work session time
-int previousTime = 0;
+unsigned long previousTime = 0;
 
 //Buzzer variables
 int melody[] = {
@@ -211,10 +211,6 @@ void draw() {
   }
   u8g.print(seconds);
 }
-
-
-
-
 
 
 void loop() {
