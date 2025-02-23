@@ -5,15 +5,17 @@
 #define BUZZER_PIN 14
 
 //Define session times - change to alter pomodoro session time
-const int workTime = 25 * 60;   
-const int shortBreak = 5 * 60;  
-const int longBreak = 15 * 60;  
+const int workTime = 25 * 60;
+const int shortBreak = 5 * 60;
+const int longBreak = 15 * 60;
 
 // Define session names - change to alter pomodoro session names
 const char* workSessionName = "Work Session";
 const char* shortBreakName = "Short Break";
 const char* longBreakName = "Long Break";
 
+//Control whether buzzer starts as on or off
+bool buzzerOn = true;
 
 
 #include "U8glib.h"
@@ -279,15 +281,16 @@ void loop() {
 
 
       u8g.drawBitmapP(0, 22, 128 / 8, 21, epd_bitmap_item_sel_background);
-    } else if (current_screen == 1) {
-      u8g.drawBitmapP(0, 0, 128 / 8, 64, bitmap_first[item_selected]);  // draw page 1
-    } else if (current_screen == 2 && item_selected == 0) {
+    } else if (current_screen == 1 && item_selected == 0) {
+      u8g.drawBitmapP(0, 0, 128 / 8, 64, bitmap_first[0]);  // draw page 1
+    } else if (current_screen == 2 && item_selected == 0) { //Pomodoro Timer Screen drawing
       draw();
     }
   } while (u8g.nextPage());
+  //Pomodoro Timer Screen
   if (current_screen == 2 && item_selected == 0) {
     unsigned long currentTime = millis();
-    if (currentTime - previousTime >= 1000) {
+    if (currentTime - previousTime >= 10) {
       // Decrement the timer
       if (remainingTime > 0) {
         remainingTime--;
@@ -306,13 +309,15 @@ void loop() {
           remainingTime = workTime;  // After a break, always return to work
         }
         //buzzer after every single session
-        tone(BUZZER_PIN, melody[0], 500);
-        delay(600);
-        tone(BUZZER_PIN, melody[1], 500);
-        delay(600);
-        tone(BUZZER_PIN, melody[2], 500);
-        delay(600);
-        tone(BUZZER_PIN, melody[3], 500);
+        if (buzzerOn == true) {
+          tone(BUZZER_PIN, melody[0], 500);
+          delay(600);
+          tone(BUZZER_PIN, melody[1], 500);
+          delay(600);
+          tone(BUZZER_PIN, melody[2], 500);
+          delay(600);
+          tone(BUZZER_PIN, melody[3], 500);
+        }
 
         isWorkSession = !isWorkSession;  // Toggle session type
       }
