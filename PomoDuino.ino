@@ -5,9 +5,9 @@
 #define BUZZER_PIN 14
 
 //Define session times - change to alter pomodoro session time
-const int workTime = 25 * 60;
-const int shortBreak = 5 * 60;
-const int longBreak = 15 * 60;
+const int workTime = 1 * 60;
+const int shortBreak = 1 * 60;
+const int longBreak = 1 * 60;
 
 // Define session names - change to alter pomodoro session names
 const char* workSessionName = "Work Session";
@@ -20,6 +20,7 @@ bool buzzerOn = true;
 
 #include "U8glib.h"
 #include "pitches.h"
+#include <EEPROM.h>
 
 U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_DEV_0 | U8G_I2C_OPT_NO_ACK | U8G_I2C_OPT_FAST);  // Fast I2C / TWI
 
@@ -132,8 +133,28 @@ const unsigned char epd_bitmap_Start[] PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+// 'empty box', 16x16px
+const unsigned char epd_bitmap_empty_box [] PROGMEM = {
+	0x1f, 0xf8, 0x20, 0x04, 0x40, 0x02, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 
+	0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x40, 0x02, 0x20, 0x04, 0x1f, 0xf8
+};
+// 'filled box', 16x16px
+const unsigned char epd_bitmap_filled_box [] PROGMEM = {
+	0x1f, 0xf8, 0x3f, 0xfc, 0x7f, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f, 0xfe, 0x3f, 0xfc, 0x1f, 0xf8
+};
+
+
+
+
+const unsigned char* checkbox[] = {
+  epd_bitmap_empty_box,
+  epd_bitmap_filled_box
+};
+
+
 const unsigned char* bitmap_first[1] = {
-  epd_bitmap_Start
+  epd_bitmap_Start,
 };
 
 const unsigned char* bitmap_second[1] = {
@@ -176,6 +197,7 @@ void setup() {
   pinMode(BUTTON_DOWN_PIN, INPUT_PULLUP);
   pinMode(BUTTON_SELECT_PIN, INPUT_PULLUP);
   pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
+  Serial.begin(9600);
 }
 
 
@@ -282,15 +304,41 @@ void loop() {
 
       u8g.drawBitmapP(0, 22, 128 / 8, 21, epd_bitmap_item_sel_background);
     } else if (current_screen == 1 && item_selected == 0) {
-      u8g.drawBitmapP(0, 0, 128 / 8, 64, bitmap_first[0]);  // draw page 1
-    } else if (current_screen == 2 && item_selected == 0) { //Pomodoro Timer Screen drawing
+      u8g.drawBitmapP(0, 0, 128 / 8, 64, bitmap_first[0]);   // draw page 1
+    } else if (current_screen == 2 && item_selected == 0) {  //Pomodoro Timer Screen drawing
       draw();
+
+      if ((digitalRead(BUTTON_DOWN_PIN) == LOW) && (button_down_clicked == 0)) {  // down button clicked - mute the timer
+        button_down_clicked = 1;
+        buzzerOn = !buzzerOn;
+      }
+
+      if ((digitalRead(BUTTON_DOWN_PIN) == HIGH) && (button_down_clicked == 1)) {  // unclick the button
+        button_down_clicked = 0;
+      }
+    }
+
+    if (current_screen == 1 && item_selected == 2){ //Settings page
+      if ((digitalRead(BUTTON_DOWN_PIN) == LOW) && (button_down_clicked == 0)) {  // down button clicked - mute the timer
+        button_down_clicked = 1;
+        buzzerOn = !buzzerOn;
+      }
+      if ((digitalRead(BUTTON_DOWN_PIN) == HIGH) && (button_down_clicked == 1)) {  // unclick the button
+        button_down_clicked = 0;
+      }
+
+      u8g.setFont(u8g_font_7x14);
+      u8g.drawStr(5, 15, "Buzzer Sound");
+      u8g.drawBitmapP(103, 2, 16/8, 16, checkbox[buzzerOn]);  
+    }
+    if (current_screen == 2 && item_selected == 2){ //removes second screen of settings page
+      current_screen = 0;
     }
   } while (u8g.nextPage());
   //Pomodoro Timer Screen
   if (current_screen == 2 && item_selected == 0) {
     unsigned long currentTime = millis();
-    if (currentTime - previousTime >= 10) {
+    if (currentTime - previousTime >= 10) { 
       // Decrement the timer
       if (remainingTime > 0) {
         remainingTime--;
